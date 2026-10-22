@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Bengali Bangle Boutique"
+description = "A warm, Bengali-inspired online boutique for browsing and shopping handcrafted bangles, with a simple product catalog and interactive cart."
+version = "1.0.0"
+id = "artifacts/bengali-bangles"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24034
+
+[services.development]
+run = "pnpm --filter @workspace/bengali-bangles run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bengali-bangles", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bengali-bangles/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24034"
+BASE_PATH = "/"
