@@ -15,7 +15,7 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 import { ArrowRight, Check, Menu, Minus, Plus, Search, ShoppingBag, X } from 'lucide-react';
-import heroBangles from './assets/hero-bangles.png';
+import heroBangles from '@assets/generated_images/kakon-bahar-hero.jpg';
 import kakonBaharLogo from './assets/kakon-bahar-logo.jpg';
 
 const queryClient = new QueryClient();
@@ -160,7 +160,10 @@ function Home() {
             <h1 className="serif text-[clamp(2.8rem,5vw,4.8rem)] leading-[1.03] tracking-[-.04em] text-[#482c2a]">
               A little colour <em className="font-medium text-[#9a5152]">for every moment.</em>
             </h1>
-            <p className="mt-5 max-w-[360px] text-[14px] leading-[1.8] text-[#74695e]">
+            <p className="bengali-serif mt-4 text-[19px] leading-relaxed text-[#9a5152] sm:text-[21px]">
+              সময়ে অসময়ে চুড়ি দিও প্রিয়
+            </p>
+            <p className="mt-2 max-w-[360px] text-[14px] leading-[1.8] text-[#74695e]">
               Bengali bangles for everyday wear and special occasions.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5">
@@ -170,8 +173,8 @@ function Home() {
               <a href="#our-story" className="text-[11px] text-[#77685b] underline decoration-[#cdb9a2] underline-offset-4 hover:text-[#79333b]">Our story</a>
             </div>
           </div>
-          <div className="relative order-1 aspect-square overflow-hidden bg-[#e7dccb] md:order-2 md:aspect-[3/2]">
-            <img src={heroBangles} alt="Vermilion and gold glass bangles resting on handwoven jamdani fabric" className="absolute inset-0 h-full w-full object-contain object-center" />
+          <div className="relative order-1 aspect-[3/2] overflow-hidden md:order-2">
+            <img src={heroBangles} alt="Vermilion and gold glass bangles resting on handwoven jamdani fabric" className="absolute inset-0 h-full w-full object-cover object-center" />
           </div>
         </section>
 
