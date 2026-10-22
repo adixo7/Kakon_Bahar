@@ -12,6 +12,7 @@ import {
 } from 'wouter';
 import { ArrowRight, Check, Menu, Minus, Plus, Search, ShoppingBag, X } from 'lucide-react';
 import heroBangles from './assets/hero-bangles.png';
+import kakonBaharLogo from './assets/kakon-bahar-logo.jpg';
 
 const queryClient = new QueryClient();
 
@@ -58,15 +59,17 @@ function Home() {
           </button>
           <div className="flex items-center gap-3">
             <a href="#top" className="flex items-center gap-3 no-underline" data-testid="link-home">
-              <span className="serif flex h-10 w-10 items-center justify-center rounded-full border border-[#9a5152] text-[20px] text-[#79333b]">ক</span>
+              <img src={kakonBaharLogo} alt="Kakon Bahar logo" className="h-14 w-14 shrink-0 object-cover" />
               <span className="leading-tight">
-                <span className="serif block text-[19px] tracking-[.02em] text-[#4a2928]">Kakon Bahar</span>
+                <span className="serif block text-[19px] tracking-[.02em] text-[#4a2928]">কাকন বাহার</span>
                 <span className="block text-[9px] uppercase tracking-[.16em] text-[#8f8174]">Bengali bangles</span>
               </span>
             </a>
           </div>
           <nav className={`${mobileMenuOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-full flex-col gap-5 border-b border-[#e6ded0] bg-[#f7f3e9] px-6 py-6 text-[12px] uppercase tracking-[.16em] md:static md:flex md:flex-row md:items-center md:gap-9 md:border-0 md:bg-transparent md:p-0`} aria-label="Main navigation">
             <a className="transition-colors hover:text-[#79333b]" href="#collection" onClick={() => setMobileMenuOpen(false)}>Shop bangles</a>
+            <a className="transition-colors hover:text-[#79333b]" href="#our-story" onClick={() => setMobileMenuOpen(false)}>Our story</a>
+            <a className="transition-colors hover:text-[#79333b]" href="#journal" onClick={() => setMobileMenuOpen(false)}>Sunday letter</a>
           </nav>
           <div className="flex items-center gap-4">
             <a href="#collection" aria-label="Search collection" className="hidden text-[#4c4138] transition-colors hover:text-[#79333b] sm:block" data-testid="link-search"><Search size={19} strokeWidth={1.5} /></a>
@@ -88,10 +91,11 @@ function Home() {
             <p className="mt-5 max-w-[360px] text-[14px] leading-[1.8] text-[#74695e]">
               Simple, colourful bangles inspired by Bengal.
             </p>
-            <div className="mt-7">
+            <div className="mt-7 flex flex-wrap items-center gap-5">
               <a href="#collection" className="group inline-flex items-center gap-4 bg-[#79333b] px-6 py-[14px] text-[10px] uppercase tracking-[.14em] text-[#fff8ee] transition-colors hover:bg-[#59252c]" data-testid="link-shop-collection">
                 Shop the collection <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
               </a>
+              <a href="#our-story" className="text-[11px] text-[#77685b] underline decoration-[#cdb9a2] underline-offset-4 hover:text-[#79333b]">Our story</a>
             </div>
           </div>
           <div className="relative order-1 min-h-[280px] overflow-hidden bg-[#e7dccb] md:order-2 md:min-h-[380px]">
@@ -130,6 +134,28 @@ function Home() {
             <p className="mt-2 text-[12px] text-[#827568]">Try another search or browse all bangles.</p>
             <button className="mt-5 text-[10px] uppercase tracking-[.16em] text-[#79333b] underline underline-offset-4" onClick={() => { setSearch(''); setCategory('All bangles'); }} data-testid="button-reset-filters">Show everything</button>
           </div>}
+        </section>
+
+        <section id="our-story" className="border-y border-[#e5dccd] bg-[#eee8dc]">
+          <div className="mx-auto grid max-w-[1360px] gap-5 px-5 py-11 md:grid-cols-2 md:items-center md:px-10 md:py-14">
+            <div>
+              <p className="mb-2 text-[10px] uppercase tracking-[.2em] text-[#9a5152]">Our story</p>
+              <h2 className="serif text-[clamp(2rem,3.5vw,3rem)] leading-tight text-[#482c2a]">A little Bengal, close to home.</h2>
+            </div>
+            <p className="max-w-[500px] text-[13px] leading-[1.8] text-[#776b60]">
+              Kakon Bahar brings Bengali colour and bangle traditions into everyday dressing.
+            </p>
+          </div>
+        </section>
+
+        <section id="journal" className="mx-auto grid max-w-[1360px] gap-4 px-5 py-11 md:grid-cols-2 md:items-center md:px-10 md:py-14">
+          <div>
+            <p className="mb-2 text-[10px] uppercase tracking-[.2em] text-[#9a5152]">A note from Bengal</p>
+            <h2 className="serif text-[clamp(2rem,3.5vw,3rem)] leading-tight text-[#482c2a]">The Sunday letter</h2>
+          </div>
+          <p className="max-w-[500px] text-[13px] leading-[1.8] text-[#776b60]">
+            Occasional notes on Bengali craft, colour, and everyday style. Coming soon.
+          </p>
         </section>
 
         <footer className="border-t border-[#e5dccd]">
