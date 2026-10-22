@@ -1,0 +1,1 @@
+- [Kakon Bahar style](kakon-bahar-style.md) — keep the Bengali bangle storefront simple and casual while retaining its core links and sections.

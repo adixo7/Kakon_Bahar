@@ -1,10 +1,14 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ClerkProvider, Show, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import {
+  Redirect,
   Route,
   Switch,
   useLocation,
@@ -15,6 +19,67 @@ import heroBangles from './assets/hero-bangles.png';
 import kakonBaharLogo from './assets/kakon-bahar-logo.jpg';
 
 const queryClient = new QueryClient();
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || '/'
+    : path;
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: '#79333b',
+    colorForeground: '#482c2a',
+    colorMutedForeground: '#8f8174',
+    colorDanger: '#b54143',
+    colorBackground: '#fffaf2',
+    colorInput: '#fffaf2',
+    colorInputForeground: '#482c2a',
+    colorNeutral: '#d8cdbd',
+    fontFamily: 'DM Sans, sans-serif',
+    borderRadius: '8px',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#fffaf2] rounded-2xl w-[440px] max-w-full overflow-hidden',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-[#482c2a]',
+    headerSubtitle: 'text-[#8f8174]',
+    socialButtonsBlockButtonText: 'text-[#482c2a]',
+    formFieldLabel: 'text-[#482c2a]',
+    footerActionLink: 'text-[#79333b]',
+    footerActionText: 'text-[#8f8174]',
+    dividerText: 'text-[#8f8174]',
+    identityPreviewEditButton: 'text-[#79333b]',
+    formFieldSuccessText: 'text-green-700',
+    alertText: 'text-[#482c2a]',
+    logoBox: 'rounded-full overflow-hidden',
+    logoImage: 'object-contain',
+    socialButtonsBlockButton: 'bg-white border-[#d8cdbd] hover:bg-[#f4eadc]',
+    formButtonPrimary: 'bg-[#79333b] hover:bg-[#59252c] text-white',
+    formFieldInput: 'bg-white text-[#482c2a] border-[#cbbba8]',
+    footerAction: 'text-[#8f8174]',
+    dividerLine: 'bg-[#d8cdbd]',
+    alert: 'bg-red-50',
+    otpCodeFieldInput: 'text-[#482c2a]',
+    formFieldRow: '',
+    main: '',
+  },
+};
 
 function Home() {
   const [category, setCategory] = useState('All bangles');
@@ -59,7 +124,7 @@ function Home() {
           </button>
           <div className="flex items-center gap-3">
             <a href="#top" className="flex items-center gap-3 no-underline" data-testid="link-home">
-              <img src={kakonBaharLogo} alt="Kakon Bahar logo" className="h-14 w-14 shrink-0 object-cover" />
+              <img src={kakonBaharLogo} alt="Kakon Bahar logo" className="h-14 w-14 shrink-0 rounded-full border border-[#d7b36d] object-cover" />
               <span className="leading-tight">
                 <span className="serif block text-[19px] tracking-[.02em] text-[#4a2928]">কাকন বাহার</span>
                 <span className="block text-[9px] uppercase tracking-[.16em] text-[#8f8174]">Bengali bangles</span>
@@ -70,6 +135,13 @@ function Home() {
             <a className="transition-colors hover:text-[#79333b]" href="#collection" onClick={() => setMobileMenuOpen(false)}>Shop bangles</a>
             <a className="transition-colors hover:text-[#79333b]" href="#our-story" onClick={() => setMobileMenuOpen(false)}>Our story</a>
             <a className="transition-colors hover:text-[#79333b]" href="#journal" onClick={() => setMobileMenuOpen(false)}>Sunday letter</a>
+            <Show when="signed-out">
+              <a className="transition-colors hover:text-[#79333b]" href={`${basePath}/sign-in`}>Sign in</a>
+              <a className="transition-colors hover:text-[#79333b]" href={`${basePath}/sign-up`}>Sign up</a>
+            </Show>
+            <Show when="signed-in">
+              <a className="transition-colors hover:text-[#79333b]" href={`${basePath}/user-portal`}>My account</a>
+            </Show>
           </nav>
           <div className="flex items-center gap-4">
             <a href="#collection" aria-label="Search collection" className="hidden text-[#4c4138] transition-colors hover:text-[#79333b] sm:block" data-testid="link-search"><Search size={19} strokeWidth={1.5} /></a>
@@ -86,10 +158,10 @@ function Home() {
         <section className="relative mx-auto grid max-w-[1360px] items-center gap-7 px-5 pb-10 pt-7 md:min-h-[430px] md:grid-cols-[.9fr_1.1fr] md:gap-10 md:px-10 md:py-10">
           <div className="rise-in relative z-10 order-2 max-w-[530px] md:order-1 md:pl-8">
             <h1 className="serif text-[clamp(2.8rem,5vw,4.8rem)] leading-[1.03] tracking-[-.04em] text-[#482c2a]">
-              Bengali bangles <em className="font-medium text-[#9a5152]">for every day.</em>
+              A little colour <em className="font-medium text-[#9a5152]">for every moment.</em>
             </h1>
             <p className="mt-5 max-w-[360px] text-[14px] leading-[1.8] text-[#74695e]">
-              Simple, colourful bangles inspired by Bengal.
+              Bengali bangles for everyday wear and special occasions.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-5">
               <a href="#collection" className="group inline-flex items-center gap-4 bg-[#79333b] px-6 py-[14px] text-[10px] uppercase tracking-[.14em] text-[#fff8ee] transition-colors hover:bg-[#59252c]" data-testid="link-shop-collection">
@@ -98,8 +170,8 @@ function Home() {
               <a href="#our-story" className="text-[11px] text-[#77685b] underline decoration-[#cdb9a2] underline-offset-4 hover:text-[#79333b]">Our story</a>
             </div>
           </div>
-          <div className="relative order-1 min-h-[280px] overflow-hidden bg-[#e7dccb] md:order-2 md:min-h-[380px]">
-            <img src={heroBangles} alt="Vermilion and gold glass bangles resting on handwoven jamdani fabric" className="absolute inset-0 h-full w-full object-cover object-center" />
+          <div className="relative order-1 aspect-square overflow-hidden bg-[#e7dccb] md:order-2 md:aspect-[3/2]">
+            <img src={heroBangles} alt="Vermilion and gold glass bangles resting on handwoven jamdani fabric" className="absolute inset-0 h-full w-full object-contain object-center" />
           </div>
         </section>
 
@@ -209,17 +281,87 @@ function Home() {
   );
 }
 
-function Router() {
+function HomeRedirect() {
   return (
-    // Keep a shared shell (sidebar, navbar) outside the boundary so it
-    // survives a page crash.
-    <RoutedErrorBoundary>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
+    <>
+      <Show when="signed-in"><Redirect to="/user-portal" /></Show>
+      <Show when="signed-out"><Home /></Show>
+    </>
   );
+}
+
+function SignInPage() {
+  return (
+    <main className="min-h-[100dvh] bg-[#f7f3e9] px-5 py-8">
+      <a href={basePath || '/'} className="mx-auto block max-w-[440px] text-[11px] uppercase tracking-[.14em] text-[#79333b]">← Back to shop</a>
+      <div className="mt-10">
+        <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      </div>
+    </main>
+  );
+}
+
+function SignUpPage() {
+  return (
+    <main className="min-h-[100dvh] bg-[#f7f3e9] px-5 py-8">
+      <a href={basePath || '/'} className="mx-auto block max-w-[440px] text-[11px] uppercase tracking-[.14em] text-[#79333b]">← Back to shop</a>
+      <div className="mt-10">
+        <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      </div>
+    </main>
+  );
+}
+
+function AccountDetails() {
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
+
+  if (!isLoaded) {
+    return <main className="grid min-h-[100dvh] place-items-center bg-[#f7f3e9] text-sm text-[#776b60]">Loading your account…</main>;
+  }
+
+  return (
+    <main className="min-h-[100dvh] bg-[#f7f3e9] px-5 py-10">
+      <div className="mx-auto max-w-[620px] border border-[#e5dccd] bg-[#fffaf2] p-7 sm:p-10">
+        <a href={basePath || '/'} className="serif text-[20px] text-[#482c2a]">কাকন বাহার</a>
+        <p className="mt-10 text-[10px] uppercase tracking-[.18em] text-[#9a5152]">My account</p>
+        <h1 className="serif mt-2 text-3xl text-[#482c2a]">Welcome, {user?.firstName || 'there'}.</h1>
+        <p className="mt-3 text-sm text-[#776b60]">{user?.primaryEmailAddress?.emailAddress}</p>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <a href={basePath || '/'} className="bg-[#79333b] px-5 py-3 text-[10px] uppercase tracking-[.14em] text-white">Return to shop</a>
+          <button onClick={() => signOut({ redirectUrl: basePath || '/' })} className="border border-[#d8cdbd] px-5 py-3 text-[10px] uppercase tracking-[.14em] text-[#482c2a]">Sign out</button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function UserPortal() {
+  return (
+    <>
+      <Show when="signed-in"><AccountDetails /></Show>
+      <Show when="signed-out"><Redirect to="/sign-in" /></Show>
+    </>
+  );
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const queryClient = useQueryClient();
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+        queryClient.clear();
+      }
+      prevUserIdRef.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, queryClient]);
+
+  return null;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
@@ -227,16 +369,47 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      appearance={clerkAppearance}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
+      localization={{
+        signIn: { start: { title: 'Welcome back', subtitle: 'Sign in to your Kakon Bahar account' } },
+        signUp: { start: { title: 'Create your Kakon Bahar account', subtitle: 'Sign up to get started' } },
+      }}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+        <TooltipProvider>
+          <RoutedErrorBoundary>
+            <Switch>
+              <Route path="/" component={HomeRedirect} />
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route path="/user-portal" component={UserPortal} />
+              <Route component={NotFound} />
+            </Switch>
+          </RoutedErrorBoundary>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
+  );
+}
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <WouterRouter base={basePath}>
+      <ClerkProviderWithRoutes />
+    </WouterRouter>
   );
 }
 
