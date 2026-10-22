@@ -90,18 +90,17 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cart, setCart] = useState<Record<number, number>>({});
   const [notice, setNotice] = useState('');
-  const categories = ['All bangles', 'Everyday', 'Festive', 'Hand-painted', 'Gold tone'];
+  const categories = ['All bangles', 'Mirror work', 'Embellished', 'Gold tone', 'Wrapped'];
   const products = [
-    { id: 1, name: 'Red Glass Stack', description: 'A little light for every day', price: 680, category: 'Everyday', tone: 'red', tag: 'Bestseller', material: 'Hand-finished glass' },
-    { id: 2, name: 'Mrittika Terracotta', description: 'Earth, made wearable', price: 920, category: 'Hand-painted', tone: 'clay', tag: 'Small batch', material: 'Hand-painted terracotta' },
-    { id: 3, name: 'Jochona Gold Pair', description: 'A quiet festive shimmer', price: 1240, category: 'Gold tone', tone: 'gold', tag: 'New', material: 'Gold-tone brass' },
-    { id: 4, name: 'Shiuli Flower Set', description: 'For mornings that feel special', price: 790, category: 'Festive', tone: 'ivory', tag: '', material: 'Enamel & glass' },
-    { id: 5, name: 'Kolabou Classic', description: 'A nod to the old neighbourhood', price: 560, category: 'Everyday', tone: 'green', tag: '', material: 'Lacquered glass' },
-    { id: 6, name: 'Rongdhonu Mix', description: 'Colour, without a reason', price: 860, category: 'Festive', tone: 'mix', tag: 'Limited', material: 'Mixed glass bangles' },
+    { id: 1, name: 'Blue Mirrorwork Stack', description: 'Blue, white, and ochre wraps with mirror accents.', price: 120, category: 'Mirror work', image: `${basePath}/products/blue-mirrorwork-stack.webp` },
+    { id: 2, name: 'Maroon & Ivory Embellished Set', description: 'Maroon and ivory bangles with jewel-style details.', price: 120, category: 'Embellished', image: `${basePath}/products/maroon-ivory-embellished-set.webp` },
+    { id: 3, name: 'Mustard Embellished Pair', description: 'Mustard wraps with floral jewel-style accents.', price: 120, category: 'Gold tone', image: `${basePath}/products/mustard-embellished-pair.webp` },
+    { id: 4, name: 'Multicolor Wrapped Stack', description: 'Colorful wrapped bangles with gold-tone bands.', price: 120, category: 'Wrapped', image: `${basePath}/products/multicolor-wrapped-stack.webp` },
+    { id: 5, name: 'Midnight Blue Floral Pair', description: 'Navy bangles with gold-tone bands and floral details.', price: 120, category: 'Embellished', image: `${basePath}/products/midnight-blue-floral-pair.webp` },
   ];
   const filtered = useMemo(() => products.filter((product) => {
     const matchesCategory = category === 'All bangles' || product.category === category;
-    const matchesSearch = `${product.name} ${product.description} ${product.material}`.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   }), [category, search]);
   const cartItems = products.filter((product) => cart[product.id]);
@@ -206,13 +205,16 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
           </div>
           {filtered.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7 md:gap-y-14">
             {filtered.map((product, index) => <article key={product.id} className="group rise-in" style={{ animationDelay: `${index * 70}ms` }} data-testid={`card-product-${product.id}`}>
-              <div className={`product-art tone-${product.tone} relative flex aspect-[.86] items-center justify-center overflow-hidden`}>
-                <div className={`bangle-stack stack-${product.tone}`} aria-hidden="true"><span /><span /><span /><span /></div>
+              <div className="relative aspect-square overflow-hidden bg-[#e9dfcf]">
+                <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" decoding="async" />
                 <button onClick={() => addToCart(product.id)} className="absolute bottom-3 left-3 right-3 flex translate-y-2 items-center justify-center gap-2 bg-[#f7f3e9]/95 py-3 text-[9px] uppercase tracking-[.16em] text-[#522d2d] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100" data-testid={`button-add-${product.id}`}><Plus size={14} /> Add to bag</button>
                 <button onClick={() => addToCart(product.id)} className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#f7f3e9] text-[#522d2d] md:hidden" aria-label={`Add ${product.name} to bag`} data-testid={`button-add-mobile-${product.id}`}><Plus size={16} /></button>
               </div>
               <div className="flex items-start justify-between gap-2 pt-4">
-                <h3 className="serif text-[15px] leading-tight text-[#482c2a] md:text-[19px]">{product.name}</h3>
+                <div className="min-w-0">
+                  <h3 className="serif text-[15px] leading-tight text-[#482c2a] md:text-[19px]">{product.name}</h3>
+                  <p className="mt-1 text-[10px] leading-relaxed text-[#827568] md:text-[11px]">{product.description}</p>
+                </div>
                 <span className="shrink-0 pt-1 text-[11px] text-[#58473e]">৳{product.price.toLocaleString('en-IN')}</span>
               </div>
             </article>)}
@@ -258,7 +260,7 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
           </div> : <>
             <div className="flex-1 overflow-y-auto px-6">
               {cartItems.map((product) => <div key={product.id} className="flex gap-4 border-b border-[#e1d7c9] py-5" data-testid={`row-cart-${product.id}`}>
-                <div className={`product-art tone-${product.tone} flex h-[94px] w-[78px] shrink-0 items-center justify-center`}><div className={`bangle-stack mini stack-${product.tone}`}><span /><span /><span /><span /></div></div>
+                <img src={product.image} alt="" className="h-[94px] w-[78px] shrink-0 object-cover" />
                 <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
                   <div className="flex justify-between gap-2"><h3 className="serif text-[16px] text-[#482c2a]">{product.name}</h3><span className="text-[11px]">৳{(product.price * cart[product.id]).toLocaleString('en-IN')}</span></div>
                   <div className="flex items-center justify-between">
