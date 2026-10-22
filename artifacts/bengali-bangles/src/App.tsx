@@ -20,6 +20,7 @@ import kakonBaharLogo from './assets/kakon-bahar-logo.jpg';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const isClerkConfigured = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
@@ -82,7 +83,7 @@ const clerkAppearance = {
   },
 };
 
-function Home() {
+function Home({ authEnabled = true }: { authEnabled?: boolean }) {
   const [category, setCategory] = useState('All bangles');
   const [search, setSearch] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
@@ -135,21 +136,25 @@ function Home() {
           <nav className={`${mobileMenuOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-full flex-col gap-5 border-b border-[#e6ded0] bg-[#f7f3e9] px-6 py-6 text-[12px] uppercase tracking-[.16em] md:static md:flex md:flex-row md:items-center md:gap-9 md:border-0 md:bg-transparent md:p-0`} aria-label="Main navigation">
             <a className="transition-colors hover:text-[#79333b]" href="#collection" onClick={() => setMobileMenuOpen(false)}>Shop bangles</a>
             <a className="transition-colors hover:text-[#79333b]" href="#journal" onClick={() => setMobileMenuOpen(false)}>Sunday letter</a>
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  className="text-left transition-colors hover:text-[#79333b]"
-                  onClick={() => setMobileMenuOpen(false)}
-                  data-testid="button-open-sign-in"
-                >
-                  Sign in
-                </button>
-              </SignInButton>
-            </Show>
-            <Show when="signed-in">
-              <a className="transition-colors hover:text-[#79333b]" href={`${basePath}/user-portal`}>My account</a>
-            </Show>
+            {authEnabled && (
+              <>
+                <Show when="signed-out">
+                  <SignInButton mode="modal">
+                    <button
+                      type="button"
+                      className="text-left transition-colors hover:text-[#79333b]"
+                      onClick={() => setMobileMenuOpen(false)}
+                      data-testid="button-open-sign-in"
+                    >
+                      Sign in
+                    </button>
+                  </SignInButton>
+                </Show>
+                <Show when="signed-in">
+                  <a className="transition-colors hover:text-[#79333b]" href={`${basePath}/user-portal`}>My account</a>
+                </Show>
+              </>
+            )}
           </nav>
           <div className="flex items-center gap-4">
             <a href="#collection" aria-label="Search collection" className="hidden text-[#4c4138] transition-colors hover:text-[#79333b] sm:block" data-testid="link-search"><Search size={19} strokeWidth={1.5} /></a>
@@ -288,6 +293,39 @@ function HomeRedirect() {
   );
 }
 
+function PublicHome() {
+  return <Home authEnabled={false} />;
+}
+
+function AuthUnavailable() {
+  return (
+    <main className="grid min-h-[100dvh] place-items-center bg-[#f7f3e9] px-5 text-center">
+      <div className="max-w-md">
+        <p className="text-[10px] uppercase tracking-[.18em] text-[#9a5152]">Kakon Bahar</p>
+        <h1 className="serif mt-3 text-3xl text-[#482c2a]">Accounts aren’t available yet.</h1>
+        <p className="mt-3 text-sm leading-relaxed text-[#776b60]">
+          You can still browse the collection. Sign-in will be available once account access is configured.
+        </p>
+        <a href={basePath || '/'} className="mt-6 inline-block bg-[#79333b] px-5 py-3 text-[10px] uppercase tracking-[.14em] text-white">
+          Return to the shop
+        </a>
+      </div>
+    </main>
+  );
+}
+
+function PublicRoutes() {
+  return (
+    <Switch>
+      <Route path="/" component={PublicHome} />
+      <Route path="/sign-in/*?" component={AuthUnavailable} />
+      <Route path="/sign-up/*?" component={AuthUnavailable} />
+      <Route path="/user-portal" component={AuthUnavailable} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function SignInPage() {
   return (
     <main className="min-h-[100dvh] bg-[#f7f3e9] px-5 py-8">
@@ -406,7 +444,7 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      {isClerkConfigured ? <ClerkProviderWithRoutes /> : <PublicRoutes />}
     </WouterRouter>
   );
 }

@@ -38,14 +38,25 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
-);
+const hasClerkSecretKey = Boolean(process.env.CLERK_SECRET_KEY);
+const hasClerkPublishableKey = Boolean(process.env.CLERK_PUBLISHABLE_KEY);
+
+if (hasClerkSecretKey !== hasClerkPublishableKey) {
+  throw new Error(
+    "Both CLERK_SECRET_KEY and CLERK_PUBLISHABLE_KEY are required to enable Clerk.",
+  );
+}
+
+if (hasClerkSecretKey && hasClerkPublishableKey) {
+  app.use(
+    clerkMiddleware((req) => ({
+      publishableKey: publishableKeyFromHost(
+        getClerkProxyHost(req) ?? "",
+        process.env.CLERK_PUBLISHABLE_KEY,
+      ),
+    })),
+  );
+}
 
 app.use("/api", router);
 
