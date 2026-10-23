@@ -35,16 +35,25 @@ export default function ProductDetailPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-5 md:px-10">
           <span className="w-8" aria-hidden="true" />
           <span className="serif text-[18px] text-[#482c2a]">কাকন বাহার</span>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[.12em] text-[#482c2a]"
-            aria-label={`Return to shop; ${totalItems} items in your bag`}
-            data-testid="link-detail-bag"
-          >
-            <ShoppingBag size={17} />
-            <span className="hidden sm:inline">Your bag</span>
-            <span data-testid="text-detail-cart-count">{totalItems}</span>
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/sign-in"
+              className="text-[10px] uppercase tracking-[.12em] text-[#482c2a] transition-colors hover:text-[#79333b]"
+              data-testid="link-detail-sign-in"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/cart"
+              className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[.12em] text-[#482c2a]"
+              aria-label={`View bag, ${totalItems} items`}
+              data-testid="link-detail-bag"
+            >
+              <ShoppingBag size={17} />
+              <span className="hidden sm:inline">Your bag</span>
+              <span data-testid="text-detail-cart-count">{totalItems}</span>
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -18,9 +18,10 @@ import {
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
-import { ArrowRight, Check, Menu, Minus, Plus, Search, ShoppingBag, X } from 'lucide-react';
+import { ArrowRight, Menu, Plus, Search, ShoppingBag, X } from 'lucide-react';
 import heroBangles from '@assets/generated_images/kakon-bahar-hero.jpg';
 import kakonBaharLogo from './assets/kakon-bahar-logo.jpg';
+import CartPage from '@/pages/cart';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -90,23 +91,13 @@ const clerkAppearance = {
 function Home({ authEnabled = true }: { authEnabled?: boolean }) {
   const [category, setCategory] = useState('All bangles');
   const [search, setSearch] = useState('');
-  const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notice, setNotice] = useState('');
-  const { lines, totalItems, changeQuantity, removeFromCart } = useCart();
+  const { totalItems } = useCart();
   const filtered = useMemo(() => products.filter((product) => {
     const matchesCategory = category === 'All bangles' || product.category === category;
     const matchesSearch = `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   }), [category, search]);
-  const cartItems = lines.flatMap((line) => {
-    const product = products.find((item) => item.id === line.productId);
-    return product ? [{ ...line, product }] : [];
-  });
-  const subtotal = cartItems.reduce(
-    (sum, line) => sum + line.product.price * line.quantity,
-    0,
-  );
   return (
     <div className="site-grain min-h-[100dvh] overflow-hidden bg-[#f7f3e9] text-[#332b27]">
       <header className="sticky top-0 z-40 border-b border-[#e6ded0] bg-[#f7f3e9]/95 backdrop-blur-md">
@@ -126,14 +117,16 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
           <nav className={`${mobileMenuOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-full flex-col gap-5 border-b border-[#e6ded0] bg-[#f7f3e9] px-6 py-6 text-[12px] uppercase tracking-[.16em] md:static md:flex md:flex-row md:items-center md:gap-9 md:border-0 md:bg-transparent md:p-0`} aria-label="Main navigation">
             <a className="transition-colors hover:text-[#79333b]" href="#collection" onClick={() => setMobileMenuOpen(false)}>Shop bangles</a>
             <a className="transition-colors hover:text-[#79333b]" href="#journal" onClick={() => setMobileMenuOpen(false)}>Sunday letter</a>
+          </nav>
+          <div className="flex items-center gap-4">
+            <a href="#collection" aria-label="Search collection" className="hidden text-[#4c4138] transition-colors hover:text-[#79333b] sm:block" data-testid="link-search"><Search size={19} strokeWidth={1.5} /></a>
             {authEnabled && (
               <>
                 <Show when="signed-out">
                   <SignInButton mode="modal">
                     <button
                       type="button"
-                      className="text-left transition-colors hover:text-[#79333b]"
-                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-[10px] uppercase tracking-[.12em] transition-colors hover:text-[#79333b]"
                       data-testid="button-open-sign-in"
                     >
                       Sign in
@@ -141,18 +134,20 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
                   </SignInButton>
                 </Show>
                 <Show when="signed-in">
-                  <a className="transition-colors hover:text-[#79333b]" href={`${basePath}/user-portal`}>My account</a>
+                  <a
+                    className="text-[10px] uppercase tracking-[.12em] transition-colors hover:text-[#79333b]"
+                    href={`${basePath}/user-portal`}
+                  >
+                    My account
+                  </a>
                 </Show>
               </>
             )}
-          </nav>
-          <div className="flex items-center gap-4">
-            <a href="#collection" aria-label="Search collection" className="hidden text-[#4c4138] transition-colors hover:text-[#79333b] sm:block" data-testid="link-search"><Search size={19} strokeWidth={1.5} /></a>
-            <button onClick={() => setCartOpen(true)} className="relative flex items-center gap-2 text-[11px] uppercase tracking-[.14em]" data-testid="button-open-cart" aria-label={`Open bag, ${totalItems} items`}>
+            <Link href="/cart" className="relative flex items-center gap-2 text-[11px] uppercase tracking-[.14em]" data-testid="link-open-cart" aria-label={`View bag, ${totalItems} items`}>
               <ShoppingBag size={19} strokeWidth={1.5} />
               <span className="hidden sm:inline">Your bag</span>
               <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#79333b] px-1 text-[9px] text-white" data-testid="text-cart-count">{totalItems}</span>
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -259,44 +254,6 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
         </footer>
       </main>
 
-      {notice && <div className="fixed bottom-5 left-1/2 z-[70] -translate-x-1/2 bg-[#482c2a] px-5 py-3 text-[11px] text-[#fff8ee] shadow-lg" role="status" data-testid="status-notice"><Check className="mr-2 inline" size={14} />{notice}</div>}
-
-      {cartOpen && <div className="fixed inset-0 z-[60]">
-        <button className="absolute inset-0 bg-[#231a18]/45" aria-label="Close bag" onClick={() => setCartOpen(false)} data-testid="button-close-cart-overlay" />
-        <aside className="absolute bottom-0 right-0 top-0 flex w-full max-w-[450px] flex-col bg-[#f7f3e9] shadow-2xl" aria-label="Shopping bag">
-          <div className="flex items-center justify-between border-b border-[#e1d7c9] px-6 py-5">
-            <h2 className="serif text-[26px] text-[#482c2a]">Your bag <span className="text-[15px] text-[#9a8a7a]">({totalItems})</span></h2>
-            <button onClick={() => setCartOpen(false)} className="flex h-9 w-9 items-center justify-center border border-[#d8cdbd] text-[#58473e] hover:bg-[#eee8dc]" aria-label="Close cart" data-testid="button-close-cart"><X size={18} /></button>
-          </div>
-          {cartItems.length === 0 ? <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-            <ShoppingBag size={28} strokeWidth={1} className="text-[#a98d76]" />
-            <h3 className="serif mt-5 text-[22px] text-[#482c2a]">Your bag is empty.</h3>
-            <button onClick={() => setCartOpen(false)} className="mt-6 bg-[#79333b] px-6 py-3 text-[9px] uppercase tracking-[.16em] text-[#fff8ee]" data-testid="button-continue-shopping">Shop bangles</button>
-          </div> : <>
-            <div className="flex-1 overflow-y-auto px-6">
-              {cartItems.map(({ product, size, quantity }) => <div key={`${product.id}-${size}`} className="flex gap-4 border-b border-[#e1d7c9] py-5" data-testid={`row-cart-${product.id}-${size}`}>
-                <img src={product.image} alt="" className="h-[94px] w-[78px] shrink-0 object-cover" />
-                <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
-                  <div className="flex justify-between gap-2"><div><h3 className="serif text-[16px] text-[#482c2a]">{product.name}</h3><p className="mt-1 text-[10px] text-[#827568]">Size {size}</p></div><span className="text-[11px]">৳{(product.price * quantity).toLocaleString('en-IN')}</span></div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center border border-[#d8cdbd]">
-                      <button onClick={() => changeQuantity(product.id, size, -1)} className="flex h-7 w-8 items-center justify-center hover:bg-[#eee8dc]" aria-label={`Remove one ${product.name}, size ${size}`} data-testid={`button-decrease-${product.id}-${size}`}><Minus size={12} /></button>
-                      <span className="w-7 text-center text-[11px]" data-testid={`text-quantity-${product.id}-${size}`}>{quantity}</span>
-                      <button onClick={() => changeQuantity(product.id, size, 1)} className="flex h-7 w-8 items-center justify-center hover:bg-[#eee8dc]" aria-label={`Add one ${product.name}, size ${size}`} data-testid={`button-increase-${product.id}-${size}`}><Plus size={12} /></button>
-                    </div>
-                    <button onClick={() => removeFromCart(product.id, size)} className="text-[9px] uppercase tracking-[.12em] text-[#9b7770] underline underline-offset-4 hover:text-[#79333b]" data-testid={`button-remove-${product.id}-${size}`}>Remove</button>
-                  </div>
-                </div>
-              </div>)}
-            </div>
-            <div className="border-t border-[#e1d7c9] px-6 pb-6 pt-5">
-              <div className="flex items-center justify-between text-[11px] uppercase tracking-[.12em] text-[#65574d]"><span>Subtotal</span><span data-testid="text-cart-subtotal">৳{subtotal.toLocaleString('en-IN')}</span></div>
-              <button onClick={() => setNotice('Checkout is not connected yet. No order will be placed.')} className="mt-5 flex w-full items-center justify-center gap-2 bg-[#79333b] py-4 text-[10px] uppercase tracking-[.17em] text-[#fff8ee] transition-colors hover:bg-[#59252c]" data-testid="button-checkout-boundary">Checkout <ArrowRight size={14} /></button>
-              <p className="mt-3 text-center text-[9px] text-[#9a8c7d]">Checkout is not connected yet.</p>
-            </div>
-          </>}
-        </aside>
-      </div>}
     </div>
   );
 }
@@ -335,6 +292,7 @@ function PublicRoutes() {
   return (
     <Switch>
       <Route path="/product/:productId" component={ProductDetailPage} />
+      <Route path="/cart" component={CartPage} />
       <Route path="/" component={PublicHome} />
       <Route path="/sign-in/*?" component={AuthUnavailable} />
       <Route path="/sign-up/*?" component={AuthUnavailable} />
@@ -447,6 +405,7 @@ function ClerkProviderWithRoutes() {
             <Switch>
               <Route path="/" component={HomeRedirect} />
               <Route path="/product/:productId" component={ProductDetailPage} />
+              <Route path="/cart" component={CartPage} />
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/user-portal" component={UserPortal} />
