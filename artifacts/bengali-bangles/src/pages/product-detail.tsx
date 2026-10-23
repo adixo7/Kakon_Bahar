@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'wouter';
-import { ArrowLeft, Check, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Check, Minus, Plus, ShoppingBag } from 'lucide-react';
 import NotFound from '@/pages/not-found';
 import { useCart } from '@/context/cart-context';
 import { bangleSizes, products, type BangleSize } from '@/data/products';
@@ -58,7 +58,7 @@ export default function ProductDetailPage() {
           Back to collection
         </Link>
 
-        <div className="overflow-hidden bg-[#e9dfcf]">
+        <div className="h-fit self-start overflow-hidden">
           <img
             src={product.image}
             alt={product.name}
@@ -122,28 +122,50 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between gap-4">
-            <label
-              htmlFor="product-quantity"
-              className="text-[11px] uppercase tracking-[.16em] text-[#482c2a]"
-            >
+            <span className="text-[11px] uppercase tracking-[.16em] text-[#482c2a]">
               Quantity
-            </label>
-            <select
-              id="product-quantity"
-              value={quantity}
-              onChange={(event) => {
-                setQuantity(Number(event.target.value));
-                setAdded(false);
-              }}
-              className="min-w-20 border border-[#d8cdbd] bg-transparent px-4 py-3 text-[12px] text-[#58473e] focus:border-[#79333b] focus:outline-none focus:ring-1 focus:ring-[#79333b]"
-              data-testid="select-product-quantity"
+            </span>
+            <div
+              className="inline-flex items-center border border-[#d8cdbd] text-[#58473e]"
+              role="group"
+              aria-label="Quantity"
+              data-testid="control-product-quantity"
             >
-              {Array.from({ length: 10 }, (_, index) => index + 1).map((count) => (
-                <option key={count} value={count}>
-                  {count}
-                </option>
-              ))}
-            </select>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuantity((current) => Math.max(1, current - 1));
+                  setAdded(false);
+                }}
+                disabled={quantity <= 1}
+                className="flex h-11 w-11 items-center justify-center transition-colors hover:bg-[#eee8dc] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Decrease quantity"
+                data-testid="button-decrease-product-quantity"
+              >
+                <Minus size={15} />
+              </button>
+              <output
+                id="product-quantity"
+                className="min-w-10 text-center text-[12px]"
+                aria-live="polite"
+                data-testid="text-product-quantity"
+              >
+                {quantity}
+              </output>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuantity((current) => Math.min(10, current + 1));
+                  setAdded(false);
+                }}
+                disabled={quantity >= 10}
+                className="flex h-11 w-11 items-center justify-center transition-colors hover:bg-[#eee8dc] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Increase quantity"
+                data-testid="button-increase-product-quantity"
+              >
+                <Plus size={15} />
+              </button>
+            </div>
           </div>
 
           <button
