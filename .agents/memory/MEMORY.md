@@ -1,1 +1,2 @@
 - [Kakon Bahar style](kakon-bahar-style.md) — keep the Bengali bangle storefront simple and casual while retaining its core links and sections.
+- [Workspace startup installs](workspace-startup-installs.md) — start one artifact workflow at a time; each runs pnpm install across the shared workspace.
