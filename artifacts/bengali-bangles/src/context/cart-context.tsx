@@ -15,7 +15,7 @@ export interface CartLine {
 interface CartContextValue {
   lines: CartLine[];
   totalItems: number;
-  addToCart: (productId: number, size: BangleSize) => void;
+  addToCart: (productId: number, size: BangleSize, quantity?: number) => void;
   changeQuantity: (productId: number, size: BangleSize, delta: number) => void;
   removeFromCart: (productId: number, size: BangleSize) => void;
 }
@@ -25,7 +25,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
 
-  const addToCart = (productId: number, size: BangleSize) => {
+  const addToCart = (productId: number, size: BangleSize, quantity = 1) => {
     setLines((current) => {
       const existing = current.find(
         (line) => line.productId === productId && line.size === size,
@@ -33,11 +33,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) {
         return current.map((line) =>
           line.productId === productId && line.size === size
-            ? { ...line, quantity: line.quantity + 1 }
+            ? { ...line, quantity: line.quantity + quantity }
             : line,
         );
       }
-      return [...current, { productId, size, quantity: 1 }];
+      return [...current, { productId, size, quantity }];
     });
   };
 

@@ -10,10 +10,12 @@ export default function ProductDetailPage() {
   const product = products.find((item) => item.id === Number(productId));
   const { addToCart, totalItems } = useCart();
   const [selectedSize, setSelectedSize] = useState<BangleSize | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
     setSelectedSize(null);
+    setQuantity(1);
     setAdded(false);
   }, [productId]);
 
@@ -23,7 +25,7 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
-    addToCart(product.id, selectedSize);
+    addToCart(product.id, selectedSize, quantity);
     setAdded(true);
   };
 
@@ -31,14 +33,7 @@ export default function ProductDetailPage() {
     <div className="site-grain min-h-[100dvh] bg-[#f7f3e9] text-[#332b27]">
       <header className="border-b border-[#e6ded0] bg-[#f7f3e9]/95">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-5 md:px-10">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[.14em] text-[#79333b] hover:text-[#59252c]"
-            data-testid="link-back-to-collection"
-          >
-            <ArrowLeft size={15} />
-            Back to collection
-          </Link>
+          <span className="w-8" aria-hidden="true" />
           <span className="serif text-[18px] text-[#482c2a]">কাকন বাহার</span>
           <Link
             href="/"
@@ -54,6 +49,15 @@ export default function ProductDetailPage() {
       </header>
 
       <main className="mx-auto grid max-w-[1200px] gap-8 px-5 py-8 md:grid-cols-[1.1fr_.9fr] md:gap-14 md:px-10 md:py-14">
+        <Link
+          href="/"
+          className="col-span-full inline-flex w-fit items-center gap-2 text-[10px] uppercase tracking-[.14em] text-[#79333b] hover:text-[#59252c]"
+          data-testid="link-back-to-collection"
+        >
+          <ArrowLeft size={15} />
+          Back to collection
+        </Link>
+
         <div className="overflow-hidden bg-[#e9dfcf]">
           <img
             src={product.image}
@@ -117,6 +121,31 @@ export default function ProductDetailPage() {
             </p>
           </div>
 
+          <div className="mt-6 flex items-center justify-between gap-4">
+            <label
+              htmlFor="product-quantity"
+              className="text-[11px] uppercase tracking-[.16em] text-[#482c2a]"
+            >
+              Quantity
+            </label>
+            <select
+              id="product-quantity"
+              value={quantity}
+              onChange={(event) => {
+                setQuantity(Number(event.target.value));
+                setAdded(false);
+              }}
+              className="min-w-20 border border-[#d8cdbd] bg-transparent px-4 py-3 text-[12px] text-[#58473e] focus:border-[#79333b] focus:outline-none focus:ring-1 focus:ring-[#79333b]"
+              data-testid="select-product-quantity"
+            >
+              {Array.from({ length: 10 }, (_, index) => index + 1).map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={handleAddToCart}
@@ -135,13 +164,14 @@ export default function ProductDetailPage() {
               data-testid="status-added-to-bag"
             >
               <Check size={15} />
-              Size {selectedSize} added to your bag.
+              {quantity} {quantity === 1 ? 'item' : 'items'} in size {selectedSize} added to your bag.
             </p>
           )}
 
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[.14em] text-[#79333b] underline underline-offset-4"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 bg-[#79333b] px-6 py-4 text-[10px] uppercase tracking-[.16em] text-white transition-colors hover:bg-[#59252c]"
+            data-testid="link-continue-browsing"
           >
             <ArrowLeft size={14} />
             Continue browsing
