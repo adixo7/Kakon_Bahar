@@ -4,10 +4,14 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { CartProvider, useCart } from '@/context/cart-context';
+import { categories, products } from '@/data/products';
 import { Toaster } from '@/components/ui/toaster';
+import ProductDetailPage from '@/pages/product-detail';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import {
+  Link,
   Redirect,
   Route,
   Switch,
@@ -88,34 +92,21 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
   const [search, setSearch] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cart, setCart] = useState<Record<number, number>>({});
   const [notice, setNotice] = useState('');
-  const categories = ['All bangles', 'Mirror work', 'Embellished', 'Gold tone', 'Wrapped'];
-  const products = [
-    { id: 1, name: 'Blue Mirrorwork Stack', description: 'Blue, white, and ochre wraps with mirror accents.', price: 120, category: 'Mirror work', image: `${basePath}/products/blue-mirrorwork-stack.webp` },
-    { id: 2, name: 'Maroon & Ivory Embellished Set', description: 'Maroon and ivory bangles with jewel-style details.', price: 120, category: 'Embellished', image: `${basePath}/products/maroon-ivory-embellished-set.webp` },
-    { id: 3, name: 'Mustard Embellished Pair', description: 'Mustard wraps with floral jewel-style accents.', price: 120, category: 'Gold tone', image: `${basePath}/products/mustard-embellished-pair.webp` },
-    { id: 4, name: 'Multicolor Wrapped Stack', description: 'Colorful wrapped bangles with gold-tone bands.', price: 120, category: 'Wrapped', image: `${basePath}/products/multicolor-wrapped-stack.webp` },
-    { id: 5, name: 'Midnight Blue Floral Pair', description: 'Navy bangles with gold-tone bands and floral details.', price: 120, category: 'Embellished', image: `${basePath}/products/midnight-blue-floral-pair.webp` },
-  ];
+  const { lines, totalItems, changeQuantity, removeFromCart } = useCart();
   const filtered = useMemo(() => products.filter((product) => {
     const matchesCategory = category === 'All bangles' || product.category === category;
     const matchesSearch = `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   }), [category, search]);
-  const cartItems = products.filter((product) => cart[product.id]);
-  const subtotal = cartItems.reduce((sum, product) => sum + product.price * cart[product.id], 0);
-  const totalItems = Object.values(cart).reduce((sum, count) => sum + count, 0);
-  const addToCart = (id: number) => {
-    setCart((current) => ({ ...current, [id]: (current[id] || 0) + 1 }));
-    setNotice('Added to your bag');
-    window.setTimeout(() => setNotice(''), 1800);
-  };
-  const changeQuantity = (id: number, delta: number) => setCart((current) => {
-    const next = { ...current, [id]: (current[id] || 0) + delta };
-    if (next[id] <= 0) delete next[id];
-    return next;
+  const cartItems = lines.flatMap((line) => {
+    const product = products.find((item) => item.id === line.productId);
+    return product ? [{ ...line, product }] : [];
   });
+  const subtotal = cartItems.reduce(
+    (sum, line) => sum + line.product.price * line.quantity,
+    0,
+  );
   return (
     <div className="site-grain min-h-[100dvh] overflow-hidden bg-[#f7f3e9] text-[#332b27]">
       <header className="sticky top-0 z-40 border-b border-[#e6ded0] bg-[#f7f3e9]/95 backdrop-blur-md">
@@ -206,13 +197,37 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
           {filtered.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7 md:gap-y-14">
             {filtered.map((product, index) => <article key={product.id} className="group rise-in" style={{ animationDelay: `${index * 70}ms` }} data-testid={`card-product-${product.id}`}>
               <div className="relative aspect-square overflow-hidden bg-[#e9dfcf]">
-                <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" decoding="async" />
-                <button onClick={() => addToCart(product.id)} className="absolute bottom-3 left-3 right-3 flex translate-y-2 items-center justify-center gap-2 bg-[#f7f3e9]/95 py-3 text-[9px] uppercase tracking-[.16em] text-[#522d2d] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100" data-testid={`button-add-${product.id}`}><Plus size={14} /> Add to bag</button>
-                <button onClick={() => addToCart(product.id)} className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#f7f3e9] text-[#522d2d] md:hidden" aria-label={`Add ${product.name} to bag`} data-testid={`button-add-mobile-${product.id}`}><Plus size={16} /></button>
+                <Link
+                  href={`/product/${product.id}`}
+                  className="absolute inset-0 block"
+                  aria-label={`View ${product.name} details`}
+                  data-testid={`link-product-image-${product.id}`}
+                >
+                  <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" decoding="async" />
+                </Link>
+                <Link
+                  href={`/product/${product.id}`}
+                  className="absolute bottom-3 left-3 right-3 z-10 flex translate-y-2 items-center justify-center gap-2 bg-[#f7f3e9]/95 py-3 text-[9px] uppercase tracking-[.16em] text-[#522d2d] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100"
+                  data-testid={`link-product-size-${product.id}`}
+                >
+                  <Plus size={14} /> Choose size
+                </Link>
+                <Link
+                  href={`/product/${product.id}`}
+                  className="absolute bottom-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#f7f3e9] text-[#522d2d] md:hidden"
+                  aria-label={`Choose a size for ${product.name}`}
+                  data-testid={`link-product-size-mobile-${product.id}`}
+                >
+                  <Plus size={16} />
+                </Link>
               </div>
               <div className="flex items-start justify-between gap-2 pt-4">
                 <div className="min-w-0">
-                  <h3 className="serif text-[15px] leading-tight text-[#482c2a] md:text-[19px]">{product.name}</h3>
+                  <h3 className="serif text-[15px] leading-tight text-[#482c2a] md:text-[19px]">
+                    <Link href={`/product/${product.id}`} data-testid={`link-product-name-${product.id}`}>
+                      {product.name}
+                    </Link>
+                  </h3>
                   <p className="mt-1 text-[10px] leading-relaxed text-[#827568] md:text-[11px]">{product.description}</p>
                 </div>
                 <span className="shrink-0 pt-1 text-[11px] text-[#58473e]">৳{product.price.toLocaleString('en-IN')}</span>
@@ -259,17 +274,17 @@ function Home({ authEnabled = true }: { authEnabled?: boolean }) {
             <button onClick={() => setCartOpen(false)} className="mt-6 bg-[#79333b] px-6 py-3 text-[9px] uppercase tracking-[.16em] text-[#fff8ee]" data-testid="button-continue-shopping">Shop bangles</button>
           </div> : <>
             <div className="flex-1 overflow-y-auto px-6">
-              {cartItems.map((product) => <div key={product.id} className="flex gap-4 border-b border-[#e1d7c9] py-5" data-testid={`row-cart-${product.id}`}>
+              {cartItems.map(({ product, size, quantity }) => <div key={`${product.id}-${size}`} className="flex gap-4 border-b border-[#e1d7c9] py-5" data-testid={`row-cart-${product.id}-${size}`}>
                 <img src={product.image} alt="" className="h-[94px] w-[78px] shrink-0 object-cover" />
                 <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
-                  <div className="flex justify-between gap-2"><h3 className="serif text-[16px] text-[#482c2a]">{product.name}</h3><span className="text-[11px]">৳{(product.price * cart[product.id]).toLocaleString('en-IN')}</span></div>
+                  <div className="flex justify-between gap-2"><div><h3 className="serif text-[16px] text-[#482c2a]">{product.name}</h3><p className="mt-1 text-[10px] text-[#827568]">Size {size}</p></div><span className="text-[11px]">৳{(product.price * quantity).toLocaleString('en-IN')}</span></div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center border border-[#d8cdbd]">
-                      <button onClick={() => changeQuantity(product.id, -1)} className="flex h-7 w-8 items-center justify-center hover:bg-[#eee8dc]" aria-label={`Remove one ${product.name}`} data-testid={`button-decrease-${product.id}`}><Minus size={12} /></button>
-                      <span className="w-7 text-center text-[11px]" data-testid={`text-quantity-${product.id}`}>{cart[product.id]}</span>
-                      <button onClick={() => changeQuantity(product.id, 1)} className="flex h-7 w-8 items-center justify-center hover:bg-[#eee8dc]" aria-label={`Add one ${product.name}`} data-testid={`button-increase-${product.id}`}><Plus size={12} /></button>
+                      <button onClick={() => changeQuantity(product.id, size, -1)} className="flex h-7 w-8 items-center justify-center hover:bg-[#eee8dc]" aria-label={`Remove one ${product.name}, size ${size}`} data-testid={`button-decrease-${product.id}-${size}`}><Minus size={12} /></button>
+                      <span className="w-7 text-center text-[11px]" data-testid={`text-quantity-${product.id}-${size}`}>{quantity}</span>
+                      <button onClick={() => changeQuantity(product.id, size, 1)} className="flex h-7 w-8 items-center justify-center hover:bg-[#eee8dc]" aria-label={`Add one ${product.name}, size ${size}`} data-testid={`button-increase-${product.id}-${size}`}><Plus size={12} /></button>
                     </div>
-                    <button onClick={() => setCart((current) => { const next = { ...current }; delete next[product.id]; return next; })} className="text-[9px] uppercase tracking-[.12em] text-[#9b7770] underline underline-offset-4 hover:text-[#79333b]" data-testid={`button-remove-${product.id}`}>Remove</button>
+                    <button onClick={() => removeFromCart(product.id, size)} className="text-[9px] uppercase tracking-[.12em] text-[#9b7770] underline underline-offset-4 hover:text-[#79333b]" data-testid={`button-remove-${product.id}-${size}`}>Remove</button>
                   </div>
                 </div>
               </div>)}
@@ -319,6 +334,7 @@ function AuthUnavailable() {
 function PublicRoutes() {
   return (
     <Switch>
+      <Route path="/product/:productId" component={ProductDetailPage} />
       <Route path="/" component={PublicHome} />
       <Route path="/sign-in/*?" component={AuthUnavailable} />
       <Route path="/sign-up/*?" component={AuthUnavailable} />
@@ -430,6 +446,7 @@ function ClerkProviderWithRoutes() {
           <RoutedErrorBoundary>
             <Switch>
               <Route path="/" component={HomeRedirect} />
+              <Route path="/product/:productId" component={ProductDetailPage} />
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/user-portal" component={UserPortal} />
@@ -445,9 +462,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      {isClerkConfigured ? <ClerkProviderWithRoutes /> : <PublicRoutes />}
-    </WouterRouter>
+    <CartProvider>
+      <WouterRouter base={basePath}>
+        {isClerkConfigured ? <ClerkProviderWithRoutes /> : <PublicRoutes />}
+      </WouterRouter>
+    </CartProvider>
   );
 }
 
